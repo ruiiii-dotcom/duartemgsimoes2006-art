@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <title>Registar Tribo</title>
+</head>
+<body style="font-family: Arial, sans-serif; text-align: center; margin-top: 50px; background-color: #f4f4f9;">
+
+    <h1>Criar Nova Tribo 🏕️</h1>
+    
+    <div style="border: 2px solid #8b5a2b; display: inline-block; padding: 30px; background-color: #fff; border-radius: 8px;">
+        <form method="POST" action="/registo">
+            
+            <label for="username">Nome da Tribo:</label><br>
+            <input type="text" id="username" name="username" required style="margin-bottom: 15px; padding: 5px;"><br>
+            
+            <label for="password">Palavra-passe:</label><br>
+            <input type="password" id="password" name="password" required style="margin-bottom: 20px; padding: 5px;"><br>
+            
+            <button type="submit" style="padding: 10px 20px; background-color: #4CAF50; color: white; border: none; cursor: pointer; font-size: 16px;">Criar Tribo</button>
+        </form>
+        <br>
+        <a href="/login" style="color: #666;">Já tens uma tribo? Faz Login aqui.</a>
+    </div>
+
+</body>
+</html>

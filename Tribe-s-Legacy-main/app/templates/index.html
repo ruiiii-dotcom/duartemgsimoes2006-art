@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tribe's Legacy - A Tua Aldeia</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        .grid-acoes { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 15px; }
+        .box-acao { background: rgba(0,0,0,0.2); padding: 15px; border-radius: 8px; border: 1px solid #4f453d; }
+        .dica { font-size: 0.8rem; color: #bdc3c7; display: block; margin-top: 3px; margin-bottom: 10px;}
+        .upg-btn { width: 100%; padding: 8px; font-size: 0.9rem; background: #2980b9; color: white; border: none; border-radius: 5px; cursor: pointer;}
+        .upg-btn:disabled { background: #27ae60; cursor: not-allowed; opacity: 1; font-weight: bold;}
+        .upg-btn:hover:not(:disabled) { background: #3498db; }
+        @media (max-width: 768px) { .grid-acoes { grid-template-columns: 1fr; } }
+    </style>
+</head>
+<body>
+
+    <main class="dashboard">
+        <header class="dashboard-header">
+            <h1>⛺ Bem-vindo, Chefe {{ current_user.username }}!</h1>
+            <div style="display: flex; gap: 10px; align-items: center;">
+                <a href="{{ url_for('main.ranking') }}" class="btn-logout" style="border-color: #f1c40f; color: white; background: rgba(241, 196, 15, 0.15); font-weight: bold;">🏆 Ver Ranking</a>
+                <a href="{{ url_for('auth.logout') }}" class="btn-logout">Sair da Tribo</a>
+            </div>
+        </header>
+
+        <section class="dashboard-grid">
+            
+            <article class="card storage-card">
+                <h2>📦 Armazém da Tribo</h2>
+                <div class="resources">
+                    <div class="resource-item">
+                        <span class="icon">🧑🏽‍🤝‍🧑🏽</span><span class="label">População:</span>
+                        <span class="value"><span id="pop-count">{{ current_user.populacao }}</span> / <span id="pop-max-count">{{ current_user.populacao_maxima }}</span></span>
+                    </div>
+                    <div class="resource-item">
+                        <span class="icon">🛖</span><span class="label">Cabanas:</span>
+                        <span class="value" id="cabanas-count">{{ current_user.cabanas }}</span>
+                    </div>
+                    <hr style="border: 1px solid #4f453d; margin: 10px 0; width: 100%;">
+                    <div class="resource-item">
+                        <span class="icon">🥩</span><span class="label">Carne:</span>
+                        <span class="value" id="carne-count">{{ current_user.carne }}</span>
+                    </div>
+                    <div class="resource-item">
+                        <span class="icon">🪨</span><span class="label">Pedra:</span>
+                        <span class="value" id="pedra-count">{{ current_user.pedra }}</span>
+                    </div>
+                </div>
+                <p style="font-size: 0.8rem; color: #bdc3c7; text-align: center; margin-top: 15px;">
+                    ⚠️ Atenção: A tribo consome carne diariamente. Ficar sem comida resulta em mortes por fome!
+                </p>
+            </article>
+
+            <article class="card actions-card">
+                <h2>⚙️ Gestão da Tribo</h2>
+                
+                <button id="btn-pedra" class="btn-action" onclick="fazerAcao('/coletar_pedra', 'btn-pedra', '🪨 Coletar Pedra (5s)', 5)" style="width: 100%;">
+                    🪨 Coletar Pedra (5s)
+                </button>
+
+                <div class="grid-acoes">
+                    <div class="box-acao">
+                        <h3 style="color:#f4ebd8; font-size: 1.1rem; margin-bottom: 10px; text-align: center;">Infraestrutura</h3>
+                        
+                        <button id="btn-cabana" class="btn-action" onclick="fazerAcao('/construir_cabana', 'btn-cabana', '🛖 Construir Cabana', 0)" style="width: 100%; padding: 8px; font-size: 0.9rem; background: #8e44ad;">
+                            🛖 Construir Cabana (100 Pedra)
+                        </button>
+                        <span class="dica">Aumenta o limite de população em 5.</span>
+
+                        <button id="btn-banquete" class="btn-action" onclick="fazerAcao('/realizar_banquete', 'btn-banquete', '🔥 Banquete Tribal', 0)" style="width: 100%; padding: 8px; font-size: 0.9rem; background: #e67e22; margin-bottom: 15px;">
+                            🔥 Banquete Tribal (100 Carne)
+                        </button>
+                        <span class="dica">Atrai entre 1 a 3 nómadas para a aldeia.</span>
+
+                        <hr style="border: 1px solid #4f453d; margin: 10px 0;">
+                        <h3 style="color:#f4ebd8; font-size: 1.1rem; margin-bottom: 10px; text-align: center;">Upgrades Místicos</h3>
+                        
+                        <button id="upg-lanca" class="upg-btn" onclick="comprarUpgrade('lanca')">
+                            {{ '✔️ Lanças Equipadas' if current_user.tem_lanca else '🗡️ Forjar Lanças (50 Pedra)' }}
+                        </button>
+                        <span class="dica">Evita lobos na pedreira e reduz risco em 5%.</span>
+
+                        <button id="upg-armadilha" class="upg-btn" onclick="comprarUpgrade('armadilha')" style="margin-top: 5px;">
+                            {{ '✔️ Armadilhas Ativas' if current_user.tem_armadilha else '🪤 Criar Armadilhas (100 Pedra)' }}
+                        </button>
+                        <span class="dica">Aumenta a carne ganha em 20%.</span>
+
+                        <button id="upg-amuleto" class="upg-btn" onclick="comprarUpgrade('amuleto')" style="margin-top: 5px;">
+                            {{ '✔️ Amuleto no Peito' if current_user.tem_amuleto else '🧿 Amuleto (150 Pedra, 100 Carne)' }}
+                        </button>
+                        <span class="dica">Garante que 1 caçador sobrevive sempre.</span>
+                    </div>
+
+                    <div class="box-acao">
+                        <h3 style="color:#f4ebd8; font-size: 1.1rem; margin-bottom: 10px; text-align: center;">Área de Caça</h3>
+                        
+                        <select id="animal-select" style="width: 100%; padding: 8px; margin-bottom: 10px; background: #3d352f; color: white; border: 1px solid #d35400; border-radius: 5px; font-size: 0.85rem;">
+                            <option value="dodo" data-min="1">Dodô (Mín: 1 pessoa)</option>
+                            <option value="javali" data-min="1">Javali (Mín: 1 pessoa)</option>
+                            <option value="tigre" data-min="2">Tigre Dentes-Sabre (Mín: 2 pessoas)</option>
+                            <option value="mamute" data-min="3">Mamute Lanudo (Mín: 3 pessoas)</option>
+                        </select>
+                        <div style="display: flex; gap: 5px; align-items: center;">
+                            <input type="number" id="num-cacadores" min="1" value="1" style="width: 50px; padding: 8px; text-align: center; border-radius: 5px; background: #3d352f; color: white; border: 1px solid #d35400;">
+                            <button id="btn-cacar" class="btn-action" onclick="iniciarCaca()" style="flex-grow: 1; padding: 8px; font-size: 0.9rem;">
+                                🏹 Caçar (10s)
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+            </article>
+        </section>
+    </main>
+
+    <div id="toast-container"></div>
+
+    <script>
+        window.onload = function() {
+            if ("{{ current_user.tem_lanca }}" === "True") document.getElementById("upg-lanca").disabled = true;
+            if ("{{ current_user.tem_armadilha }}" === "True") document.getElementById("upg-armadilha").disabled = true;
+            if ("{{ current_user.tem_amuleto }}" === "True") document.getElementById("upg-amuleto").disabled = true;
+        };
+
+        function mostrarNotificacao(mensagem, sucesso) {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = `toast ${sucesso ? 'success' : 'danger'}`;
+            toast.innerText = mensagem;
+            container.appendChild(toast);
+            setTimeout(() => toast.classList.add('show'), 10);
+            setTimeout(() => { toast.classList.remove('show'); setTimeout(() => toast.remove(), 300); }, 5000);
+        }
+
+        function atualizarDados(data) {
+            document.getElementById('carne-count').innerText = data.carne;
+            document.getElementById('pedra-count').innerText = data.pedra;
+            document.getElementById('pop-count').innerText = data.populacao;
+            document.getElementById('pop-max-count').innerText = data.populacao_maxima;
+            document.getElementById('cabanas-count').innerText = data.cabanas;
+            document.getElementById('num-cacadores').max = data.populacao;
+
+            if(data.tem_lanca) { const b = document.getElementById('upg-lanca'); b.disabled = true; b.innerText = "✔️ Lanças Equipadas"; }
+            if(data.tem_armadilha) { const b = document.getElementById('upg-armadilha'); b.disabled = true; b.innerText = "✔️ Armadilhas Ativas"; }
+            if(data.tem_amuleto) { const b = document.getElementById('upg-amuleto'); b.disabled = true; b.innerText = "✔️ Amuleto no Peito"; }
+        }
+
+        async function fazerAcao(rota, btnId, textoOriginal, tempoEspera) {
+            const btn = document.getElementById(btnId);
+            btn.disabled = true;
+
+            if (tempoEspera > 0) {
+                let tempo = tempoEspera;
+                const relogio = setInterval(async () => {
+                    tempo--;
+                    btn.innerHTML = `⏳ A trabalhar... (${tempo}s)`;
+                    if (tempo <= 0) {
+                        clearInterval(relogio);
+                        await executarFetch(rota, btn, textoOriginal);
+                    }
+                }, 1000);
+            } else {
+                await executarFetch(rota, btn, textoOriginal);
+            }
+        }
+
+        async function executarFetch(rota, btn, textoOriginal) {
+            btn.innerHTML = `⚙️ A processar...`;
+            try {
+                const res = await fetch(rota, { method: 'POST' });
+                const data = await res.json();
+                
+                if (data.game_over) {
+                    window.location.href = "/game_over";
+                    return;
+                }
+
+                if (data.erro) { mostrarNotificacao(data.erro, false); } 
+                else { atualizarDados(data); mostrarNotificacao(data.mensagem, data.sucesso); }
+            } catch (err) { mostrarNotificacao("Erro de conexão.", false); }
+            btn.disabled = false;
+            btn.innerHTML = textoOriginal;
+        }
+
+        async function comprarUpgrade(tipo) {
+            try {
+                const res = await fetch('/comprar_upgrade', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({tipo: tipo})
+                });
+                const data = await res.json();
+                if (data.erro) { mostrarNotificacao(data.erro, false); } 
+                else { atualizarDados(data); mostrarNotificacao(data.mensagem, data.sucesso); }
+            } catch (err) { mostrarNotificacao("Erro de servidor.", false); }
+        }
+
+        function iniciarCaca() {
+            const select = document.getElementById('animal-select');
+            const animal = select.value;
+            const minCacadores = parseInt(select.options[select.selectedIndex].getAttribute('data-min'));
+            
+            const inputCacadores = document.getElementById('num-cacadores');
+            const cacadores = parseInt(inputCacadores.value);
+            const btn = document.getElementById('btn-cacar');
+            const populacaoAtual = parseInt(document.getElementById('pop-count').innerText);
+
+            // Barreira 1: Impede caçar presas grandes com menos aldeões que o mínimo exigido
+            if (isNaN(cacadores) || cacadores < minCacadores) {
+                mostrarNotificacao(`Obrigatório enviar pelo menos ${minCacadores} aldeão(ões)!`, false);
+                return;
+            }
+
+            // Barreira 2: Impede enviar mais caçadores do que a população viva que resta
+            if (cacadores > populacaoAtual) {
+                mostrarNotificacao(`Ação impossível! Estás a enviar ${cacadores} caçadores, mas só tens ${populacaoAtual} pessoa(s) viva(s).`, false);
+                return;
+            }
+
+            let tempo = 10;
+            btn.disabled = true; inputCacadores.disabled = true; select.disabled = true;
+
+            const relogio = setInterval(async () => {
+                tempo--;
+                btn.innerHTML = `⏳ (${tempo}s)`;
+                if (tempo <= 0) {
+                    clearInterval(relogio);
+                    btn.innerHTML = `⚙️...`;
+                    try {
+                        const res = await fetch('/cacar', {
+                            method: 'POST',
+                            headers: {'Content-Type': 'application/json'},
+                            body: JSON.stringify({animal, cacadores})
+                        });
+                        const data = await res.json();
+                        
+                        if (data.game_over) {
+                            window.location.href = "/game_over";
+                            return;
+                        }
+
+                        if (data.erro) { mostrarNotificacao(data.erro, false); } 
+                        else { atualizarDados(data); mostrarNotificacao(data.mensagem, data.sucesso); }
+                    } catch (err) { mostrarNotificacao("Erro de servidor.", false); }
+                    
+                    btn.disabled = false; inputCacadores.disabled = false; select.disabled = false;
+                    btn.innerHTML = "🏹 Caçar (10s)";
+                }
+            }, 1000);
+        }
+    </script>
+</body>
+</html>
