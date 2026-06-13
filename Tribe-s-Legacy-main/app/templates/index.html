@@ -208,7 +208,7 @@
             const btn = document.getElementById('btn-cacar');
             const populacaoAtual = parseInt(document.getElementById('pop-count').innerText);
 
-            // Barreira 1: Impede caçar presas grandes com menos aldeões que o mínimo exigido
+            // Barreira 1: Impede caçar presas grandes com menos aldeões do que o mínimo exigido
             if (isNaN(cacadores) || cacadores < minCacadores) {
                 mostrarNotificacao(`Obrigatório enviar pelo menos ${minCacadores} aldeão(ões)!`, false);
                 return;
